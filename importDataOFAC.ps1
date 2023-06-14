@@ -1,5 +1,5 @@
 ﻿$pwdPath=$PWD.Path
-Import-Module $pwdPath\common\psqlFunctions.psm1 -Force
+Import-Module $pwdPath\common\psqlFunctions.psm1 -Force -Verbose
 
 $ofacLoadDateText = (psqlExecute "select max(import_date)+1 from dbo.ofac_data;" "-t").Trim()
 if([string]::IsNullOrEmpty($ofacLoadDateText)) {

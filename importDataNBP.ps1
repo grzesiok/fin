@@ -1,5 +1,5 @@
 ﻿$pwdPath=$PWD.Path
-Import-Module $pwdPath\common\psqlFunctions.psm1 -Force
+Import-Module $pwdPath\common\psqlFunctions.psm1 -Force -Verbose
 
 # If date in parameters is empty then use last date + 1 from DB up to current date
 if([string]::IsNullOrEmpty($args[0])) {

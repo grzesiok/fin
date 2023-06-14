@@ -3,7 +3,9 @@ $scriptFiles = Get-ChildItem "$pwdPath\config\*.ps1" -Recurse
 
 foreach ($script in $scriptFiles) {
   try {
-    . $script.FullName
+    $scriptFullName = $script.FullName
+    Write-Output "Applying confing from $scriptFullName ..."
+    . $scriptFullName
   } catch [System.Exception] {
     throw
   }

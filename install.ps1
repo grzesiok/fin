@@ -1,5 +1,5 @@
 $pwdPath=$PWD.Path
-Import-Module $pwdPath\common\psqlFunctions.psm1 -Force
+Import-Module $pwdPath\common\psqlFunctions.psm1 -Force -Verbose
 
 # Import process
 psqlExecute "DROP TABLE if exists dbo.d_date;
