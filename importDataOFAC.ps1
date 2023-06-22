@@ -11,7 +11,8 @@ if($ofacLoadDate -gt (Get-Date))
 {
   Exit 0
 }
-
+# For missing entries we should only import todays report
+$ofacLoadDateText = (Get-Date).ToString('yyyy-MM-dd')
 Write-Output "Loading OFAC data for ($ofacLoadDateText)..."
 # Pull data from Endpoint
 $WebResponse = Invoke-WebRequest -Uri "http://www.treasury.gov/ofac/downloads/consolidated/consolidated.xml" -Method GET
