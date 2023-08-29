@@ -29,6 +29,8 @@ if ($WebResponse.StatusCode -eq "200") {
   psqlExecute "\echo Loading Stage (dbo.ofac_data) ...
 INSERT INTO dbo.ofac_data(import_date, xmldata, jsondata)
   VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContentXML', '$ofacContentJSON');"
+  psqlExecute "\echo Refreshing OFAC data ...
+call dbo.pr_ofac_refresh();"
 }
 
 Exit 0
