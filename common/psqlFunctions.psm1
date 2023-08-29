@@ -20,6 +20,10 @@ function psqlExecute([string]$command, [string]$optionalParam)
   $p.StartInfo = $pinfo
   $p.Start() | Out-Null
   $p.WaitForExit()
+  $stderr = $p.StandardError.ReadToEnd()
+  if(![string]::IsNullOrEmpty($stderr)) {
+    Write-Output "STDERR: $stderr"
+  }
   $stdout = $p.StandardOutput.ReadToEnd()
   Remove-Item -Path $tmpFilePath
   return $stdout
