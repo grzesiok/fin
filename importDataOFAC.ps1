@@ -1,5 +1,6 @@
 ﻿$pwdPath=$PWD.Path
 Import-Module $pwdPath\common\psqlFunctions.psm1 -Force -Verbose
+Import-Module $pwdPath\common\commonFunctions.psm1 -Force -Verbose
 
 $ofacLoadDateText = (psqlExecute "select max(import_date)+1 from dbo.ofac_data;" "-t").Trim()
 if([string]::IsNullOrEmpty($ofacLoadDateText)) {
@@ -18,10 +19,14 @@ Write-Output "Loading OFAC data for ($ofacLoadDateText)..."
 $WebResponse = Invoke-WebRequest -Uri "http://www.treasury.gov/ofac/downloads/consolidated/consolidated.xml" -Method GET
 # If there is no data then skip processing
 if ($WebResponse.StatusCode -eq "200") {
-  $ofacContent = $WebResponse.Content.replace("'", "''")
+  # Get XML from OFAC page
+  $ofacContentXML = $WebResponse.Content.replace("'", "''")
+  # Translate it to JSON format
+  $ofacContentJSON = [xml[]] $ofacContentXML | ConvertFrom-Xml | ConvertTo-Json -Depth 10
+  # Save at DB
   psqlExecute "\echo Loading Stage (dbo.ofac_data) ...
-INSERT INTO dbo.ofac_data(import_date, xmldata)
-  VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContent');"
+INSERT INTO dbo.ofac_data(import_date, jsondata)
+  VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContentJSON');"
 }
 
 Exit 0

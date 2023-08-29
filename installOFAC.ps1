@@ -5,7 +5,7 @@ Import-Module $pwdPath\common\psqlFunctions.psm1 -Force -Verbose
 psqlExecute "DROP TABLE if exists dbo.ofac_data;
 
 CREATE TABLE dbo.ofac_data(import_date DATE NOT NULL,
-                           xmldata XML);"
+                           jsondata JSON);"
 
 ## Import Schedule
 # Cleaning up schedules
