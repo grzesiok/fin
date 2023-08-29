@@ -21,12 +21,14 @@ $WebResponse = Invoke-WebRequest -Uri "http://www.treasury.gov/ofac/downloads/co
 if ($WebResponse.StatusCode -eq "200") {
   # Get XML from OFAC page
   $ofacContentXML = $WebResponse.Content.replace("'", "''")
+  # Print Summary to STDOUT
+  [xml]$ofacContentXML.sdnList.publshInformation
   # Translate it to JSON format
   $ofacContentJSON = [xml[]] $ofacContentXML | ConvertFrom-Xml | ConvertTo-Json -Depth 10
   # Save at DB
   psqlExecute "\echo Loading Stage (dbo.ofac_data) ...
-INSERT INTO dbo.ofac_data(import_date, jsondata)
-  VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContentJSON');"
+INSERT INTO dbo.ofac_data(import_date, xmldata, jsondata)
+  VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContentXML', '$ofacContentJSON');"
 }
 
 Exit 0
