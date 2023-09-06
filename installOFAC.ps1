@@ -31,7 +31,8 @@ declare
   l_rows_deleted INTEGER;
 begin
   DELETE FROM dbo.ofac_entry;
-  FOR ofacdata_row IN (SELECT od.import_date, od.xmldata FROM dbo.ofac_data od ORDER BY od.import_date ASC)
+  FOR ofacdata_row IN (SELECT od.import_date, od.xmldata, md5(row(od.xmldata)::text) as md5sum
+                       FROM dbo.ofac_data od ORDER BY od.import_date ASC)
   LOOP
     RAISE NOTICE 'Processing OFAC date %...', ofacdata_row.import_date;
     l_begindate := to_date(xpath('/mydefns:sdnList/mydefns:publshInformation/mydefns:Publish_Date/text()',
@@ -97,7 +98,7 @@ begin
           OR coalesce(oe.last_name, '') != coalesce(xt.last_name, '')
           OR coalesce(oe.sdn_type, '') != coalesce(xt.sdn_type, ''));
     GET DIAGNOSTICS l_rows_updated_y = ROW_COUNT;
-    RAISE NOTICE 'Processing OFAC date % -> INS=% UPDN=% UPDY=% DEL=%', ofacdata_row.import_date, l_rows_inserted, l_rows_updated_n, l_rows_updated_y, l_rows_deleted;
+    RAISE NOTICE 'Processing OFAC date %(%) -> INS=% UPDN=% UPDY=% DEL=%', ofacdata_row.import_date, ofacdata_row.md5sum, l_rows_inserted, l_rows_updated_n, l_rows_updated_y, l_rows_deleted;
   END LOOP;
 end; $$"
 
