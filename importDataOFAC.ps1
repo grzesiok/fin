@@ -8,29 +8,28 @@ if([string]::IsNullOrEmpty($ofacLoadDateText)) {
   $ofacLoadDateText = (Get-Date).ToString('yyyy-MM-dd')
 }
 $ofacLoadDate = [Datetime]::ParseExact($ofacLoadDateText, 'yyyy-MM-dd', $null)
-if($ofacLoadDate -gt (Get-Date))
+if(($ofacLoadDate -lt (Get-Date)) -or ($ofacLoadDate -eq (Get-Date)))
 {
-  Exit 0
-}
-# For missing entries we should only import todays report
-$ofacLoadDateText = (Get-Date).ToString('yyyy-MM-dd')
-Write-Output "Loading OFAC data for ($ofacLoadDateText)..."
-# Pull data from Endpoint
-$WebResponse = Invoke-WebRequest -Uri "http://www.treasury.gov/ofac/downloads/consolidated/consolidated.xml" -Method GET
-# If there is no data then skip processing
-if ($WebResponse.StatusCode -eq "200") {
-  # Get XML from OFAC page
-  $ofacContentXML = $WebResponse.Content.replace("'", "''")
-  # Print Summary to STDOUT
-  [xml]$ofacContentXML.sdnList.publshInformation
-  # Translate it to JSON format
-  $ofacContentJSON = [xml[]] $ofacContentXML | ConvertFrom-Xml | ConvertTo-Json -Depth 10
-  # Save at DB
-  psqlExecute "\echo Loading Stage (dbo.ofac_data) ...
+  # For missing entries we should only import todays report
+  $ofacLoadDateText = (Get-Date).ToString('yyyy-MM-dd')
+  Write-Output "Loading OFAC data for ($ofacLoadDateText)..."
+  # Pull data from Endpoint
+  $WebResponse = Invoke-WebRequest -Uri "http://www.treasury.gov/ofac/downloads/consolidated/consolidated.xml" -Method GET
+  # If there is no data then skip processing
+  if ($WebResponse.StatusCode -eq "200") {
+    # Get XML from OFAC page
+    $ofacContentXML = $WebResponse.Content.replace("'", "''")
+    # Print Summary to STDOUT
+    [xml]$ofacContentXML.sdnList.publshInformation
+    # Translate it to JSON format
+    $ofacContentJSON = [xml[]] $ofacContentXML | ConvertFrom-Xml | ConvertTo-Json -Depth 10
+    # Save at DB
+    psqlExecute "\echo Loading Stage (dbo.ofac_data) ...
 INSERT INTO dbo.ofac_data(import_date, xmldata, jsondata)
   VALUES(to_date('$ofacLoadDateText','YYYY-MM-DD'), '$ofacContentXML', '$ofacContentJSON');"
-  psqlExecute "\echo Refreshing OFAC data ...
-call dbo.pr_ofac_refresh();"
+  }
 }
+psqlExecute "\echo Refreshing OFAC data ...
+call dbo.pr_ofac_refresh();"
 
 Exit 0
