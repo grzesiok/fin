@@ -29,11 +29,22 @@ declare
   l_rows_updated_n INTEGER;
   l_rows_updated_y INTEGER;
   l_rows_deleted INTEGER;
+  l_hash_short_left TEXT;
+  l_hash_short_right TEXT;
 begin
   DELETE FROM dbo.ofac_entry;
-  FOR ofacdata_row IN (SELECT od.import_date, od.xmldata, md5(row(od.xmldata)::text) as md5sum
-                       FROM dbo.ofac_data od ORDER BY od.import_date ASC)
+  FOR ofacdata_row IN (SELECT t.import_date, t.xmldata, t.hashsum
+                       FROM (SELECT t2.import_date, t2.xmldata, t2.hashsum
+                             FROM (SELECT od.import_date,
+                                          od.xmldata,
+                                          sha512(row(od.xmldata)::text::bytea) as hashsum,
+                                          first_value(od.import_date) over (partition by sha512(row(od.xmldata)::text::bytea) order by od.import_date asc) as first_import_date
+                                   FROM dbo.ofac_data od) t2
+                             WHERE t2.import_date = t2.first_import_date) t
+                       ORDER BY t.import_date ASC)
   LOOP
+    l_hash_short_left := LEFT(encode(ofacdata_row.hashsum, 'hex'), 8);
+    l_hash_short_right := RIGHT(encode(ofacdata_row.hashsum, 'hex'), 8);
     RAISE NOTICE 'Processing OFAC date %...', ofacdata_row.import_date;
     l_begindate := to_date(xpath('/mydefns:sdnList/mydefns:publshInformation/mydefns:Publish_Date/text()',
                            ofacdata_row.xmldata,
@@ -98,7 +109,7 @@ begin
           OR coalesce(oe.last_name, '') != coalesce(xt.last_name, '')
           OR coalesce(oe.sdn_type, '') != coalesce(xt.sdn_type, ''));
     GET DIAGNOSTICS l_rows_updated_y = ROW_COUNT;
-    RAISE NOTICE 'Processing OFAC date %(%) -> INS=% UPDN=% UPDY=% DEL=%', ofacdata_row.import_date, ofacdata_row.md5sum, l_rows_inserted, l_rows_updated_n, l_rows_updated_y, l_rows_deleted;
+    RAISE NOTICE 'Processing OFAC date %(%...%) -> INS=% UPDN=% UPDY=% DEL=%', ofacdata_row.import_date, l_hash_short_left, l_hash_short_right, l_rows_inserted, l_rows_updated_n, l_rows_updated_y, l_rows_deleted;
   END LOOP;
 end; $$"
 
