@@ -38,7 +38,7 @@ begin
                              FROM (SELECT od.import_date,
                                           od.xmldata,
                                           sha512(row(od.xmldata)::text::bytea) as hashsum,
-                                          first_value(od.import_date) over (partition by sha512(row(od.xmldata)::text::bytea) order by od.import_date asc) as first_import_date
+                                          first_value(od.import_date) over (partition by sha512(row(od.xmldata)::text::bytea) order by od.import_date desc) as first_import_date
                                    FROM dbo.ofac_data od) t2
                              WHERE t2.import_date = t2.first_import_date) t
                        ORDER BY t.import_date ASC)
